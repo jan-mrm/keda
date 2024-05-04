@@ -144,6 +144,7 @@ type azurePipelinesMetadata struct {
 	authContext                          authContext
 	parent                               string
 	demands                              string
+	demandsToIgnore                      string
 	poolID                               int
 	targetPipelinesQueueLength           int64
 	activationTargetPipelinesQueueLength int64
@@ -265,6 +266,12 @@ func parseAzurePipelinesMetadata(ctx context.Context, logger logr.Logger, config
 		meta.demands = config.TriggerMetadata["demands"]
 	} else {
 		meta.demands = ""
+	}
+
+	if val, ok := config.TriggerMetadata["demandsToIgnore"]; ok && val != "" {
+		meta.demandsToIgnore = config.TriggerMetadata["demandsToIgnore"]
+	} else {
+		meta.demandsToIgnore = ""
 	}
 
 	meta.jobsToFetch = 250
@@ -480,10 +487,28 @@ func stripAgentVFromArray(array []string) []string {
 	return result
 }
 
+func stripValuesFromArray(array []string, valuesToStrip []string) []string {
+	if len(valuesToStrip) > 0 {
+		var result []string
+	OUTER:
+		for _, item := range array {
+			for _, valueToStrip := range valuesToStrip {
+				if item == valueToStrip {
+					continue OUTER
+				}
+			}
+			result = append(result, item)
+		}
+		return result
+	}
+	return array
+}
+
 // Determine if the scaledjob has the right demands to spin up
 func getCanAgentDemandFulfilJob(jr JobRequest, metadata *azurePipelinesMetadata) bool {
 	countDemands := 0
-	demandsInJob := stripAgentVFromArray(jr.Demands)
+	demandsToIgnore := strings.Split(metadata.demandsToIgnore, ",")
+	demandsInJob := stripValuesFromArray(stripAgentVFromArray(jr.Demands), demandsToIgnore)
 	demandsInScaler := stripAgentVFromArray(strings.Split(metadata.demands, ","))
 
 	for _, demandInJob := range demandsInJob {

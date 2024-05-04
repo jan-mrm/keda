@@ -65,6 +65,7 @@ Here is an overview of all new **experimental** features:
 ### Improvements
 
 - TODO ([#XXX](https://github.com/kedacore/keda/issues/XXX))
+- **Azure Pipelines Scaler**: New configuration parameter `demandsToIgnore` to ignore certain demands especially ones added automatically by pipeline tasks, useful when using `requireAllDemands: true` ([#5579](https://github.com/kedacore/keda/issues/5579))
 
 ### Fixes
 

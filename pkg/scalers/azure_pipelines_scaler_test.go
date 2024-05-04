@@ -337,6 +337,60 @@ func TestAzurePipelinesNotMatchedPartialRequiredTriggerDemands(t *testing.T) {
 	}
 }
 
+func TestAzurePipelinesMatchedDemandAgentWithRequireAllDemandsAndOneIgnoredDemand(t *testing.T) {
+	var apiStub = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(buildLoadJSON())
+	}))
+
+	meta := getDemandJobMetaData(apiStub.URL)
+	meta.requireAllDemands = true
+	meta.demands = "dotnet60"
+	meta.demandsToIgnore = "java"
+
+	mockAzurePipelinesScaler := azurePipelinesScaler{
+		metadata:   meta,
+		httpClient: http.DefaultClient,
+	}
+
+	queuelen, err := mockAzurePipelinesScaler.GetAzurePipelinesQueueLength(context.TODO())
+
+	if err != nil {
+		t.Fail()
+	}
+
+	if queuelen < 1 {
+		t.Fail()
+	}
+}
+
+func TestAzurePipelinesMatchedDemandAgentWithRequireAllDemandsAndTwoIgnoredDemand(t *testing.T) {
+	var apiStub = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(buildLoadJSON())
+	}))
+
+	meta := getDemandJobMetaData(apiStub.URL)
+	meta.requireAllDemands = true
+	meta.demands = "dotnet60"
+	meta.demandsToIgnore = "someOtherDemand,java"
+
+	mockAzurePipelinesScaler := azurePipelinesScaler{
+		metadata:   meta,
+		httpClient: http.DefaultClient,
+	}
+
+	queuelen, err := mockAzurePipelinesScaler.GetAzurePipelinesQueueLength(context.TODO())
+
+	if err != nil {
+		t.Fail()
+	}
+
+	if queuelen < 1 {
+		t.Fail()
+	}
+}
+
 func buildLoadJSON() []byte {
 	output := testJobRequestResponse[0 : len(testJobRequestResponse)-2]
 	for i := 1; i < loadCount; i++ {
